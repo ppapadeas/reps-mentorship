@@ -48,6 +48,7 @@ d3.selection.prototype.moveToFront = function() {
 
 function highlight_path(curr_node,i) {
     var focus = d3.event.type === 'mouseover' ? true : false;
+    d3.select(this).classed('current', focus);
     while (curr_node.depth>0) {
       d3.select('#id-' + curr_node.user_id).classed('path', focus);
       d3.select('#node-id-' + curr_node.user_id).classed('focus', focus);
@@ -86,7 +87,11 @@ function create_diagram(obj) {
     var node = svg.selectAll('.node')
         .data(nodes)
         .enter().append('g')
-        .attr('class', function(d, i) {return d.children ? 'node' : 'leaf';})
+        .attr('class', function(d, i) {
+                var node = d.children ? 'node' : 'leaf';
+                var root = d.parent ? null : 'root';
+                return node+' '+root;
+              })
         .attr('id', function(d, i) { return 'node-id-' + d.user_id; })
         .attr('transform', function(d) { return 'rotate(' + (d.x - 90) + ')translate(' + d.y + ')'; })
         .on('mouseover', highlight_path)
