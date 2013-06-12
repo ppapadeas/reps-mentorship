@@ -123,24 +123,65 @@ function loader_canvas_icon_init() {
     sl.show();
 }
 
+function get_data(offset, limit){
+    return $.ajax({
+                    type: 'GET',
+                    url: 'https://reps.mozilla.org/api/v1/rep/',
+                    async: true,
+                    contentType: 'application/jsonp',
+                    dataType: 'jsonp',
+                    data: {
+                      'offset': offset,
+                      'limit': limit
+                      }
+                  });
+}
+
+function parse_data() {
+    var data = Array.prototype.slice.call(arguments);
+    var objects = [];
+
+    data.forEach(function(obj) {
+        objects = objects.concat(obj[0].objects);
+    });
+
+    var reps = get_reps(objects);
+    var mentorship_tree = {};
+
+    mentorship_tree.name = 'Original Council';
+    mentorship_tree.children = reps.original_council;
+
+    $('#profiles-loading-wrapper').hide();
+    create_diagram(create_tree(mentorship_tree, reps.mentorship));
+}
+
+function create_api_workers(total_count) {
+    var workers = [];
+    for (var i=0; i<=total_count; i=i+20) {
+        workers.push(get_data(i,20));
+    }
+
+    $.when.apply(null, workers).done(parse_data);
+
+}
+
 $(document).ready(function() {
     loader_canvas_icon_init();
     $('#profiles-loading').append('<div>Please wait while viz magic happens!</div>');
+
     $.ajax({
-             type: 'GET',
-             url: 'https://reps.mozilla.org/api/v1/rep/?limit=500',
-             async: true,
-             contentType: 'application/jsonp',
-             dataType: 'jsonp',
+         type: 'GET',
+         url: 'https://reps.mozilla.org/api/v1/rep/',
+         async: true,
+         contentType: 'application/jsonp',
+         dataType: 'jsonp',
+         data: {
+           'offset': 0,
+           'limit': 1
+         },
+         success: function (data) {
+             create_api_workers(data.meta.total_count);
+         }
+    });
 
-             success: function(data) {
-               var reps = get_reps(data.objects);
-               var mentorship_tree = {};
-               mentorship_tree.name = 'Original Council';
-               mentorship_tree.children = reps.original_council;
-
-               $('#profiles-loading-wrapper').hide();
-               create_diagram(create_tree(mentorship_tree, reps.mentorship));
-             }
-         });
 });
